@@ -2,11 +2,11 @@
 
 export type Direction = "horizontal" | "vertical";
 
-export interface Source {
+/* export interface Source {
   id: string;
   label: string;
   value: number;
-}
+} */
 
 export interface Rect {
   x: number;
@@ -15,7 +15,7 @@ export interface Rect {
   height: number;
 }
 
-export interface Positioned {
+export interface Positioned<Source> {
   source: Source;
   rect: Rect;
 }
@@ -43,30 +43,34 @@ export type DefinedOptions = {
  * - Returns rectangles in [0,width]x[0,height]
  * - `direction` controls first split (then alternates)
  */
-export function treeMap(
+export function treeMap<Source>(
   items: Source[],
+  getValue: (src: Source) => number,
   partialOptions: Options
-): Positioned[] {
+): Positioned<Source>[] {
   const options: DefinedOptions = {
     ...partialOptions,
     direction: partialOptions.direction || "horizontal",
     padding: partialOptions.padding ?? 0,
     minValue: partialOptions.minValue ?? 0,
   };
-  const filtered = items.filter((it) => it.value > options.minValue);
+  const filtered = items.filter((it) => getValue(it) > options.minValue);
+  /*
   const total = filtered.reduce((sum, it) => sum + it.value, 0);
 
   if (filtered.length === 0 || total <= 0) {
     return [];
   }
+  */
 
   // Sort by value descending for nicer layout
-  const sorted = [...filtered].sort((a, b) => b.value - a.value);
+  const sorted = [...filtered].sort((a, b) => getValue(b) - getValue(a));
 
-  const rects: Positioned[] = [];
+  const rects: Positioned<Source>[] = [];
 
   layoutRecursive(
     sorted,
+    getValue,
     0,
     0,
     options.width,
@@ -80,8 +84,9 @@ export function treeMap(
   return rects;
 }
 
-function layoutSliceAndDice(
+function layoutSliceAndDice<Source>(
   items: Source[],
+  getValue: (src: Source) => number,
   x: number,
   y: number,
   width: number,
@@ -89,7 +94,7 @@ function layoutSliceAndDice(
   direction: Direction,
   totalValue: number,
   padding: number,
-  output: Positioned[]
+  output: Positioned<Source>[]
 ) {
   if (items.length === 0 || width <= 0 || height <= 0) return;
 
@@ -113,7 +118,7 @@ function layoutSliceAndDice(
   const isHorizontal = direction === "horizontal";
 
   for (const source of items) {
-    const ratio = source.value / totalValue;
+    const ratio = getValue(source) / totalValue;
 
     if (isHorizontal) {
       const w = width * ratio;
@@ -141,16 +146,16 @@ function layoutSliceAndDice(
   // Still a valid treemap; easy to understand & explain in interview.
 }
 
-
-function layoutRecursive(
+function layoutRecursive<Source>(
   items: Source[],
+  getValue: (src: Source) => number,
   x: number,
   y: number,
   width: number,
   height: number,
   direction: Direction,
   padding: number,
-  output: Positioned[]
+  output: Positioned<Source>[]
 ) {
   if (items.length === 0 || width <= 0 || height <= 0) return;
 
@@ -162,24 +167,24 @@ function layoutRecursive(
   }
 
   // Calculate total value
-  const total = items.reduce((sum, it) => sum + it.value, 0);
+  const total = items.reduce((sum, it) => sum + getValue(it), 0);
 
   // Find best split point (approximately half the total value)
   let leftSum = 0;
   let splitIndex = 0;
 
   for (let i = 0; i < items.length - 1; i++) {
-    leftSum += items[i].value;
+    leftSum += getValue(items[i]);
     if (leftSum >= total / 2) {
       // Check if this split or the previous is closer to 50/50
       const currentRatio = leftSum / total;
-      const prevRatio = (leftSum - items[i].value) / total;
+      const prevRatio = (leftSum - getValue(items[i])) / total;
 
       if (Math.abs(currentRatio - 0.5) < Math.abs(prevRatio - 0.5)) {
         splitIndex = i + 1;
       } else {
         splitIndex = i;
-        leftSum -= items[i].value;
+        leftSum -= getValue(items[i]);
       }
       break;
     }
@@ -191,27 +196,78 @@ function layoutRecursive(
 
   if (leftItems.length === 0 || rightItems.length === 0) {
     // Fallback: just place all items
-    layoutRecursive(items, x, y, width, height, direction, padding, output);
+    layoutRecursive(
+      items,
+      getValue,
+      x,
+      y,
+      width,
+      height,
+      direction,
+      padding,
+      output
+    );
     return;
   }
 
   const leftRatio = leftSum / total;
-  const nextDirection: Direction = direction === "horizontal" ? "vertical" : "horizontal";
+  const nextDirection: Direction =
+    direction === "horizontal" ? "vertical" : "horizontal";
 
   if (direction === "horizontal") {
     // Split horizontally
     const leftWidth = width * leftRatio;
     const rightWidth = width - leftWidth;
 
-    layoutRecursive(leftItems, x, y, leftWidth, height, nextDirection, padding, output);
-    layoutRecursive(rightItems, x + leftWidth, y, rightWidth, height, nextDirection, padding, output);
+    layoutRecursive(
+      leftItems,
+      getValue,
+      x,
+      y,
+      leftWidth,
+      height,
+      nextDirection,
+      padding,
+      output
+    );
+    layoutRecursive(
+      rightItems,
+      getValue,
+      x + leftWidth,
+      y,
+      rightWidth,
+      height,
+      nextDirection,
+      padding,
+      output
+    );
   } else {
     // Split vertically
     const leftHeight = height * leftRatio;
     const rightHeight = height - leftHeight;
 
-    layoutRecursive(leftItems, x, y, width, leftHeight, nextDirection, padding, output);
-    layoutRecursive(rightItems, x, y + leftHeight, width, rightHeight, nextDirection, padding, output);
+    layoutRecursive(
+      leftItems,
+      getValue,
+      x,
+      y,
+      width,
+      leftHeight,
+      nextDirection,
+      padding,
+      output
+    );
+    layoutRecursive(
+      rightItems,
+      getValue,
+      x,
+      y + leftHeight,
+      width,
+      rightHeight,
+      nextDirection,
+      padding,
+      output
+    );
   }
 }
 

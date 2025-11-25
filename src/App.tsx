@@ -1,8 +1,7 @@
 import "./styles.css";
-import { Source } from "./TreeMap/TreeMap";
-import { TreeMapView } from "./Components/TreeMapView";
+import { TreeMapView, Plate } from "./Components/TreeMapView";
 
-const sources: Source[] = [
+const sources: Plate[] = [
   { id: "test-1", label: "Test 1", value: 0.1 },
   { id: "test-2", label: "Test 2", value: 0.45 },
   { id: "test-3", label: "Test 3", value: 0.35 },
