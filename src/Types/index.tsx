@@ -5,7 +5,7 @@ export interface Lot {
 }
 
 export interface Bid {
-  plateId: string;
+  lotId: string;
   accountId: string;
   amount: number;
   timestamp: number;

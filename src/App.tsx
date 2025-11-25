@@ -1,20 +1,51 @@
 import "./styles.css";
-import { TreeMapView, Plate } from "./Components/TreeMapView";
-
-const sources: Plate[] = [
-  { id: "test-1", label: "Test 1", value: 0.1 },
-  { id: "test-2", label: "Test 2", value: 0.45 },
-  { id: "test-3", label: "Test 3", value: 0.35 },
-  { id: "test-4", label: "Test 4", value: 0.95 },
-  { id: "test-5", label: "Test 5", value: 0.05 },
-];
+import { useAppState } from "./Types/AppState";
+import { AccountSelector } from "./Components/AccountSelector";
+import { ViewToggle } from "./Components/ViewToggle";
+import { TreeMapView } from "./Components/TreeMapView";
+import { ListView } from "./Components/ListView";
 
 export default function App() {
+  const {
+    state,
+    currentAccount,
+    lotsWithBids,
+    sortedLots,
+    usedBalance,
+    placeBid,
+    removeBid,
+    setAccount,
+    setViewMode,
+  } = useAppState();
+
+  const availableBalance = currentAccount ? currentAccount.balance - usedBalance : 0;
+
   return (
     <div className="App">
-      <h1>Hello CodeSandbox</h1>
-      <h2>Start evolving to see some magic happen!</h2>
-      <TreeMapView sources={sources} />
+      <h1>Stock Bidding Platform</h1>
+
+      <AccountSelector
+        accounts={state.accounts}
+        currentAccountId={state.currentAccountId}
+        onAccountChange={setAccount}
+        usedBalance={usedBalance}
+      />
+
+      <ViewToggle
+        viewMode={state.viewMode}
+        onViewChange={setViewMode}
+      />
+
+      {state.viewMode === 'treemap' ? (
+        <TreeMapView sources={state.lots} />
+      ) : (
+        <ListView
+          lots={sortedLots}
+          availableBalance={availableBalance}
+          onPlaceBid={placeBid}
+          onRemoveBid={removeBid}
+        />
+      )}
     </div>
   );
 }
