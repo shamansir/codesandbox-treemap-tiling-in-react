@@ -1,12 +1,24 @@
 import { useReducer, useMemo, useCallback, useEffect } from 'react';
-import type { AppState, AppAction, Lot, Bid, Account } from './index';
+import type { AppAction } from './AppAction';
+import type { PresentedLot, Lot, Bid, Account } from './index';
+
+export interface AppState {
+  lots: Lot[];
+  bids: Bid[];
+  accounts: Account[];
+  currentAccountId: string | null;
+  viewMode: 'treemap' | 'list';
+  availableLotIds: string[];
+  auctionEndTime: number | null;
+}
 
 // Configuration constants
 export const AUCTION_DURATION_MS = 60000; // 1 minute
 export const LOTS_PER_AUCTION = 3;
 
 // Master list of all possible lots
-const ALL_LOTS: Omit<Lot, 'currentPrice' | 'ownerId'>[] = [
+const ALL_LOTS: PresentedLot[] = [
+// const ALL_LOTS: Omit<Lot, 'currentPrice' | 'ownerId'>[] = [
   { id: "lot-1", label: "Tesla", minPrice: 100 },
   { id: "lot-2", label: "Apple", minPrice: 150 },
   { id: "lot-3", label: "Google", minPrice: 200 },

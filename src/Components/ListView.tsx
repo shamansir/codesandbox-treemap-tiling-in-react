@@ -1,22 +1,10 @@
 import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { valueToColor } from './TreeMapView';
+import { LotListing } from '../Types';
 
-interface LotWithBids {
-  id: string;
-  label: string;
-  minPrice: number;
-  currentPrice: number;
-  ownerId: string | null;
-  ownerName: string | null;
-  totalBids: number;
-  highestBid: number;
-  currentUserBid: number;
-  hasBid: boolean;
-  isAvailable: boolean;
-}
 
 interface Props {
-  lots: LotWithBids[];
+  lots: LotListing[];
   availableBalance: number;
   timeRemaining: number;
   onPlaceBid: (lotId: string, amount: number) => void;
@@ -110,7 +98,7 @@ export const ListView: React.FC<Props> = ({
           </tr>
         </thead>
         <tbody>
-          {lots.map((lot: LotWithBids) => {
+          {lots.map((lot: LotListing) => {
             const isDisabled = !lot.isAvailable;
             const rowStyle: React.CSSProperties = {
               borderBottom: '1px solid #ddd',

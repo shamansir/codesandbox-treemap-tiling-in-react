@@ -1,34 +1,26 @@
-import React, { useMemo }  from "react";
+import React, { useMemo } from "react";
 import * as TreeMap from "../TreeMap/TreeMap";
+import { Plate } from "../Types";
 
-export type LotInfo = {
-  id: string;
-  label: string;
-  currentValue: number;
-  ownerId: string | null;
-  ownerName: string | null;
-};
 
 export type Props = {
-  sources: LotInfo[];
+  toDistribute: Plate[];
 };
 
-export const TreeMapView: React.FC<Props> = ({ sources }) => {
+export const TreeMapView: React.FC<Props> = ({ toDistribute }) => {
   // Calculate max price for color normalization
-  const maxPrice = useMemo(
-    () => Math.max(...sources.map(s => s.currentValue), 1),
-    [sources]
-  );
+  const maxValue = Math.max(...toDistribute.map((s) => s.currentValue), 1);
 
   const positioned = useMemo(
-    () => TreeMap.treeMap(sources, (p) => p.currentValue, {
-      width: 800,
-      height: 400,
-      direction: "horizontal",
-      padding: 2,
-      minValue: 0.01,
-    }),
-    [sources]
+    () =>
+      TreeMap.treeMap(toDistribute, (p) => p.currentValue, {
+        width: 800,
+        height: 400,
+        direction: "horizontal",
+        padding: 2,
+        minValue: 0.01,
+      }),
+    [toDistribute]
   );
 
   return (
@@ -47,7 +39,7 @@ export const TreeMapView: React.FC<Props> = ({ sources }) => {
             key={source.id}
             rect={rect}
             source={source}
-            maxPrice={maxPrice}
+            maxValue={maxValue}
           />
         ))}
       </div>
@@ -55,13 +47,11 @@ export const TreeMapView: React.FC<Props> = ({ sources }) => {
   );
 };
 
-const TreeMapPlate: React.FC<TreeMap.Positioned<LotInfo> & { maxPrice: number }> = ({
-  rect,
-  source,
-  maxPrice,
-}) => {
-  const normalizedValue = source.currentValue / maxPrice;
-  const hasOwner = source.ownerId !== null;
+const TreeMapPlate: React.FC<
+  TreeMap.Positioned<Plate> & { maxValue: number }
+> = ({ rect, source, maxValue }) => {
+  const normalizedValue = source.currentValue / maxValue;
+  const isEnabled = source.enabled;
 
   return (
     <div
@@ -82,23 +72,26 @@ const TreeMapPlate: React.FC<TreeMap.Positioned<LotInfo> & { maxPrice: number }>
         background: valueToColor(normalizedValue),
       }}
     >
-      <div style={{
-        fontWeight: 'bold',
-        color: hasOwner ? '#888' : '#000',
-      }}>
+      <div
+        style={{
+          fontWeight: "bold",
+          color: isEnabled ? "#888" : "#000",
+        }}
+      >
         {source.label}
       </div>
-      <div style={{ fontSize: 9 }}>
-        ${source.currentValue.toFixed(2)}
-      </div>
-      {hasOwner && (
-        <div style={{
-          fontSize: 8,
-          color: '#555',
-          marginTop: 2,
-          fontStyle: 'italic',
-        }}>
-          Owner: {source.ownerName}
+      <div style={{ fontSize: 9 }}>${source.currentValue.toFixed(2)}</div>
+      {isEnabled && (
+        <div
+          style={{
+            fontSize: 8,
+            color: "#555",
+            marginTop: 2,
+            fontStyle: "italic",
+          }}
+        >
+          { source.lines.join("; ") }
+          {/* Owner: {source.ownerName} */}
         </div>
       )}
     </div>

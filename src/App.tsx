@@ -4,6 +4,7 @@ import { AccountSelector } from "./Components/AccountSelector";
 import { ViewToggle } from "./Components/ViewToggle";
 import { TreeMapView } from "./Components/TreeMapView";
 import { ListView } from "./Components/ListView";
+import { lotListingToPlate } from "./Types";
 
 export default function App() {
   const {
@@ -18,6 +19,7 @@ export default function App() {
     setAccount,
     setViewMode,
   } = useAppState();
+
 
   const availableBalance = currentAccount ? currentAccount.balance - usedBalance : 0;
 
@@ -38,7 +40,7 @@ export default function App() {
       />
 
       {state.viewMode === 'treemap' ? (
-        <TreeMapView sources={lotsWithBids.map((lot) => ({ ...lot, currentValue: lot.currentPrice }))} />
+        <TreeMapView toDistribute={lotsWithBids.map(lotListingToPlate)} />
       ) : (
         <ListView
           lots={sortedLots}
