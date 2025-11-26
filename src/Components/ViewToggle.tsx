@@ -20,7 +20,7 @@ export const ViewToggle: React.FC<Props> = ({ viewMode, onViewChange }) => {
           cursor: 'pointer',
         }}
       >
-        Treemap View
+        Market View
       </button>
       <button
         onClick={() => onViewChange('list')}
@@ -33,7 +33,7 @@ export const ViewToggle: React.FC<Props> = ({ viewMode, onViewChange }) => {
           cursor: 'pointer',
         }}
       >
-        List View
+        Auction
       </button>
     </div>
   );

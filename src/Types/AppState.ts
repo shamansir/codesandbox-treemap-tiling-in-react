@@ -217,8 +217,6 @@ function appReducer(state: AppState, action: AppAction): AppState {
   }
 }
 
-// ...existing code...
-
 export function useAppState() {
   const [state, dispatch] = useReducer(appReducer, initialState);
   const [currentTime, setCurrentTime] = useState(Date.now());
@@ -309,7 +307,7 @@ export function useAppState() {
     });
   }, [state.lots, state.bids, state.currentAccountId, state.availableLotIds, state.accounts]);
 
-  // Memoized sorted lots for list view
+  // Memoized sorted lots for Auction
   const sortedLots = useMemo(() => {
     return [...lotsWithBids].sort((a, b) => {
       // Available lots first

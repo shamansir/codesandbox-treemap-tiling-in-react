@@ -26,9 +26,9 @@ export const ListView: React.FC<Props> = ({
     setBidAmounts(prev => ({ ...prev, [lotId]: value }));
   }, []);
 
-  const handlePlaceBid = useCallback((lotId: string, minPrice: number) => {
+  const handlePlaceBid = useCallback((lotId: string, effectiveMinPrice: number) => {
     const amount = parseFloat(bidAmounts[lotId] || '0');
-    if (amount >= minPrice && amount <= availableBalance) {
+    if (amount >= effectiveMinPrice && amount <= availableBalance) {
       onPlaceBid(lotId, amount);
       setBidAmounts(prev => ({ ...prev, [lotId]: '' }));
     }
@@ -42,6 +42,7 @@ export const ListView: React.FC<Props> = ({
   };
 
   return (
+
     <div>
       <div style={{
         display: 'flex',
@@ -53,7 +54,7 @@ export const ListView: React.FC<Props> = ({
         borderRadius: 8,
       }}>
         <h2 style={{ margin: 0 }}>
-          Stock Auction - List View
+          Stock Auction
           {isFrozen && (
             <span style={{ marginLeft: 10, color: '#856404', fontSize: 16 }}>
               (Processing Results...)
@@ -69,7 +70,7 @@ export const ListView: React.FC<Props> = ({
         </div>
       </div>
 
-      <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+     <table style={{ width: '100%', borderCollapse: 'collapse' }}>
         <thead>
           <tr style={{ background: '#f0f0f0' }}>
             <th style={cellStyle}>Stock</th>
@@ -83,6 +84,11 @@ export const ListView: React.FC<Props> = ({
         </thead>
         <tbody>
           {lots.map(lot => {
+            // Calculate effective minimum price (current price + 2% if owned, otherwise min price)
+            const effectiveMinPrice = lot.ownerId
+              ? Math.ceil(lot.currentPrice * 1.02 * 100) / 100  // Round up to 2 decimal places
+              : lot.minPrice;
+
             const isDisabled = !lot.isAvailable || isFrozen;
             const rowStyle: React.CSSProperties = {
               borderBottom: '1px solid #ddd',
@@ -158,18 +164,18 @@ export const ListView: React.FC<Props> = ({
                     <div style={{ display: 'flex', gap: 5, justifyContent: 'center' }}>
                       <input
                         type="number"
-                        min={lot.minPrice}
+                        min={effectiveMinPrice}
                         step="0.01"
                         value={bidAmounts[lot.id] || ''}
                         onChange={(e) => handleBidChange(lot.id, e.target.value)}
-                        placeholder={`Min: ${lot.minPrice}`}
+                        placeholder={`Min: ${effectiveMinPrice.toFixed(2)}`}
                         style={{ width: 100, padding: 5 }}
                       />
                       <button
-                        onClick={() => handlePlaceBid(lot.id, lot.minPrice)}
+                        onClick={() => handlePlaceBid(lot.id, effectiveMinPrice)}
                         disabled={
                           !bidAmounts[lot.id] ||
-                          parseFloat(bidAmounts[lot.id]) < lot.minPrice ||
+                          parseFloat(bidAmounts[lot.id]) < effectiveMinPrice ||
                           parseFloat(bidAmounts[lot.id]) > availableBalance
                         }
                         style={{
@@ -181,7 +187,7 @@ export const ListView: React.FC<Props> = ({
                           cursor: 'pointer',
                           opacity: (
                             !bidAmounts[lot.id] ||
-                            parseFloat(bidAmounts[lot.id]) < lot.minPrice ||
+                            parseFloat(bidAmounts[lot.id]) < effectiveMinPrice ||
                             parseFloat(bidAmounts[lot.id]) > availableBalance
                           ) ? 0.5 : 1,
                         }}
