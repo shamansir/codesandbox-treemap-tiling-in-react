@@ -21,31 +21,6 @@ export const ListView: React.FC<Props> = ({
   isFrozen,
 }) => {
   const [bidAmounts, setBidAmounts] = useState<Record<string, string>>({});
-  const [displayTime, setDisplayTime] = useState(timeRemaining);
-  const rafRef = useRef<number | null>(null);
-
-  // Update display time using requestAnimationFrame
-  useEffect(() => {
-    setDisplayTime(timeRemaining);
-
-    const updateTimer = () => {
-      setDisplayTime((prev : number) => {
-        const newTime = Math.max(0, prev - 16); // Approximate frame time
-        return newTime;
-      });
-      rafRef.current = requestAnimationFrame(updateTimer);
-    };
-
-    if (timeRemaining > 0) {
-      rafRef.current = requestAnimationFrame(updateTimer);
-    }
-
-    return () => {
-      if (rafRef.current !== null) {
-        cancelAnimationFrame(rafRef.current);
-      }
-    };
-  }, [timeRemaining]);
 
   const handleBidChange = useCallback((lotId: string, value: string) => {
     setBidAmounts(prev => ({ ...prev, [lotId]: value }));
@@ -88,9 +63,9 @@ export const ListView: React.FC<Props> = ({
         <div style={{
           fontSize: 24,
           fontWeight: 'bold',
-          color: isFrozen ? '#856404' : displayTime < 10000 ? '#dc3545' : '#007bff',
+          color: isFrozen ? '#856404' : timeRemaining < 10000 ? '#dc3545' : '#007bff',
         }}>
-          ⏱️ {formatTime(displayTime)}
+          ⏱️ {formatTime(timeRemaining)}
         </div>
       </div>
 
@@ -107,8 +82,8 @@ export const ListView: React.FC<Props> = ({
           </tr>
         </thead>
         <tbody>
-          {lots.map((lot: LotListing) => {
-            const isDisabled = !lot.isAvailable;
+          {lots.map(lot => {
+            const isDisabled = !lot.isAvailable || isFrozen;
             const rowStyle: React.CSSProperties = {
               borderBottom: '1px solid #ddd',
               opacity: isDisabled ? 0.4 : 1,
@@ -119,7 +94,7 @@ export const ListView: React.FC<Props> = ({
               <tr key={lot.id} style={rowStyle}>
                 <td style={cellStyle}>
                   <strong>{lot.label}</strong>
-                  {lot.isAvailable && (
+                  {lot.isAvailable && !isFrozen && (
                     <span style={{
                       marginLeft: 8,
                       color: '#28a745',
@@ -163,6 +138,8 @@ export const ListView: React.FC<Props> = ({
                 <td style={cellStyle}>
                   {!lot.isAvailable ? (
                     <span style={{ color: '#6c757d' }}>Not available</span>
+                  ) : isFrozen ? (
+                    <span style={{ color: '#856404' }}>Frozen</span>
                   ) : lot.hasBid ? (
                     <button
                       onClick={() => onRemoveBid(lot.id)}

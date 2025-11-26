@@ -1,4 +1,4 @@
-import { useReducer, useMemo, useCallback, useEffect } from 'react';
+import { useReducer, useMemo, useCallback, useEffect, useState } from 'react';
 import type { AppAction } from './AppAction';
 import type { PresentedLot, Lot, Bid, Account } from './index';
 
@@ -217,8 +217,20 @@ function appReducer(state: AppState, action: AppAction): AppState {
   }
 }
 
+// ...existing code...
+
 export function useAppState() {
   const [state, dispatch] = useReducer(appReducer, initialState);
+  const [currentTime, setCurrentTime] = useState(Date.now());
+
+  // Update current time for reactive timer calculations
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setCurrentTime(Date.now());
+    }, 100); // Update every 100ms for smooth countdown
+
+    return () => clearInterval(interval);
+  }, []);
 
   // Start new auction automatically after freeze ends
   useEffect(() => {
@@ -316,14 +328,14 @@ export function useAppState() {
       .reduce((sum, b) => sum + b.amount, 0);
   }, [state.bids, state.currentAccountId]);
 
-  // Calculate time remaining (including freeze time)
+  // Calculate time remaining (including freeze time) - now reactive with currentTime
   const timeRemaining = useMemo(() => {
     if (state.freezeEndTime) {
-      return Math.max(0, state.freezeEndTime - Date.now());
+      return Math.max(0, state.freezeEndTime - currentTime);
     }
     if (!state.auctionEndTime) return 0;
-    return Math.max(0, state.auctionEndTime - Date.now());
-  }, [state.auctionEndTime, state.freezeEndTime]);
+    return Math.max(0, state.auctionEndTime - currentTime);
+  }, [state.auctionEndTime, state.freezeEndTime, currentTime]);
 
   // Callbacks
   const placeBid = useCallback(
@@ -367,5 +379,4 @@ export function useAppState() {
     setViewMode,
     isFrozen: state.isFrozen,
   };
-
 }
