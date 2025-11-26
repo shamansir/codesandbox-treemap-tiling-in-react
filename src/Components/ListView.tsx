@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { valueToColor } from './TreeMapView';
 
 interface LotWithBids {
@@ -31,6 +31,31 @@ export const ListView: React.FC<Props> = ({
   onRemoveBid,
 }) => {
   const [bidAmounts, setBidAmounts] = useState<Record<string, string>>({});
+  const [displayTime, setDisplayTime] = useState(timeRemaining);
+  const rafRef = useRef<number | null>(null);
+
+  // Update display time using requestAnimationFrame
+  useEffect(() => {
+    setDisplayTime(timeRemaining);
+
+    const updateTimer = () => {
+      setDisplayTime((prev : number) => {
+        const newTime = Math.max(0, prev - 16); // Approximate frame time
+        return newTime;
+      });
+      rafRef.current = requestAnimationFrame(updateTimer);
+    };
+
+    if (timeRemaining > 0) {
+      rafRef.current = requestAnimationFrame(updateTimer);
+    }
+
+    return () => {
+      if (rafRef.current !== null) {
+        cancelAnimationFrame(rafRef.current);
+      }
+    };
+  }, [timeRemaining]);
 
   const handleBidChange = useCallback((lotId: string, value: string) => {
     setBidAmounts(prev => ({ ...prev, [lotId]: value }));
@@ -66,9 +91,9 @@ export const ListView: React.FC<Props> = ({
         <div style={{
           fontSize: 24,
           fontWeight: 'bold',
-          color: timeRemaining < 10000 ? '#dc3545' : '#007bff',
+          color: displayTime < 10000 ? '#dc3545' : '#007bff',
         }}>
-          ⏱️ {formatTime(timeRemaining)}
+          ⏱️ {formatTime(displayTime)}
         </div>
       </div>
 
@@ -85,7 +110,7 @@ export const ListView: React.FC<Props> = ({
           </tr>
         </thead>
         <tbody>
-          {lots.map(lot => {
+          {lots.map((lot: LotWithBids) => {
             const isDisabled = !lot.isAvailable;
             const rowStyle: React.CSSProperties = {
               borderBottom: '1px solid #ddd',
